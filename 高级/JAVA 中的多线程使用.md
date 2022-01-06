@@ -111,7 +111,7 @@
 
   - Thread 类也实现了 Runnable 接口，所以实际上，我们自定义的 MyThread 类和 Thread类之间是一种代理和主体的关系。MyThread 类负责项目核心功能，线程相关资源的调度都交给 Thread 类来处理。
 
-    ![image-20210930192019771](C:\Users\lonel\Desktop\Java学习笔记\Pics\多线程Thread和Runnable.png)
+    ![image-20210930192019771](..\pics\\多线程Thread和Runnable.png)
 
   - 在 Thread 中 `run()` 方法的实现如下：
 
@@ -128,7 +128,7 @@
 
   - 多线程开发中，Thread 描述线程，Runnable 描述资源。
 
-    ![image-20210930191657644](C:\Users\lonel\Desktop\Java学习笔记\Pics\多线程开发.png)
+    ![image-20210930191657644](..\pics\多线程开发.png)
 
   在开发中多线程的实现最好方式是 Runnable 接口，但是这种方法有一个缺陷，即无法获取一个返回值。我们可以使用 Callable 接口来替代。
 
