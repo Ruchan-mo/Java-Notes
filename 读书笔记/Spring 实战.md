@@ -184,7 +184,7 @@ main() 方法是 JAR 文件执行时要运行的方法。main() 方法调用 Spr
 
 Spring Web 中各个组件之间的关系：
 
-![SpringWeb各个组件之间的关系](C:\Users\lonel\Desktop\Java学习笔记\Pics\SpringWeb各个组件之间的关系.jpg)
+![SpringWeb各个组件之间的关系](https://github.com/1874yin/Java-Notes/blob/main/Pics/SpringWeb%E5%90%84%E4%B8%AA%E7%BB%84%E4%BB%B6%E4%B9%8B%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB.jpg?raw=true)
 
 控制器的主要职责是处理 HTTP 请求，要么将请求传递给试图以便于渲染 HTML （浏览器展现），要么直接将数据写入响应体（RESTful）。
 
