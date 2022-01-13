@@ -561,7 +561,7 @@ public class Ingredient {
 ```java
 @Data
 @Entity
-@Table(name="Taco")
+@Table(name="taco")
 public class Taco {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -583,7 +583,7 @@ public class Taco {
 
 @PrePersist 注解的方法会在 Taco 持久化之前执行，将 createdAt 设置为当前的日期和时间。
 
-@Table 注解表明了实体应该持久化到数据库中的表名
+@Table 注解表明了实体应该持久化到数据库中的表名。hibernate 对表名大小写敏感，而数据库中表名是不区分大小写的，类似 “Taco Order” 的表名会被自动转为 “taco_order”，@Table 注解中应该使用小写表名，否则会导致报错。
 
 声明：
 
@@ -622,3 +622,128 @@ List<Order> readOrdersByDeliveryZipAndPlacedAtBetween(
 List<Order> readOrdersDeliveredInSeattle();
 ```
 
+Spring Boot  会在启动的时候执行根类路径下名为 schema.sql 和 data.sql 的文件，我们可以把定义表结构的 schema.sql 和 插入数据的 data.sql 文件放在 "src/main/resources" 文件夹下。
+
+schema.sql
+
+```sql
+create table if not exists Taco_Ingredients (
+  taco bigint not null,
+  ingredient varchar(4) not null
+);
+```
+
+data.sql
+
+```sql
+delete from Taco_Ingredients;
+insert into Ingredient (id, name, type) values ('FLTO', 'Flour Tortilla', 'WRAP');
+```
+
+
+
+#### 四、保护 Spring
+
+##### 启动 Spring Security
+
+在项目中增加 Spring Security 的依赖即可启用 Spring Security。
+
+Spring 会默认启用基本的安全配置，访问网站需要提供身份验证，默认用户名为 user ，随机的密码出现在应用的日志文件（控制台）中，类似：
+
+```bash
+Using default security password: 087cfc6a-027d-44bc-95d7-cbb3a798alea
+```
+
+基本的安全配置特性：
+
+- 所有的 HTTP 请求都需要认证
+- 不需要角色和权限
+- 没有登录页面
+- 认证过程是通过 HTTP basic 认证对话框实现的
+- 系统只有一个用户，用户名为 user
+
+要想确保应用的安全性，我们至少需要以下功能：
+
+- 自定义登录页面
+- 提供多用户，以及注册功能
+- 不同请求路径执行不同的安全规则
+
+为此，我们可以编写显式的配置覆盖掉自动配置提供的功能。从用户存储开始，这样我们就可以有多个用户了。
+
+##### 配置 Spring Security
+
+```java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        ...
+    }
+}
+```
+
+Spring Security 提供了多种配置用户存储的可选方案，我们只要覆盖 WebSecurityConfigurerAdapter 基础类中定义的  `configure() ` 方法来进行配置。
+
+**基于内存**
+
+```java
+@Override
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+    auth
+        .inMemoryAuthentication()
+        	.withUser("root")
+                .password("{noop}admin")
+                .authorities("ROLE_USER")
+        	.and()
+        	.withUser("user")
+        		.password("{noop}123456")
+        		.authorities("ROLE_USER");
+}
+```
+
+**基于 JDBC**
+
+```java
+@Autowired
+DataSource dataSource;
+
+@Override
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+    auth
+        .jdbcAuthentication()
+        	.dataSource(dataSource)
+        	.usersByUsernameQuery( 	// 自定义查询 sql 语句
+    			"select username, password, enabled from Users where username = ?")
+        	.authoritiesByUsernameQuery(
+    			"select username, authority from UserAuthorities where username = ?")
+        	.passwordEncoder(new StandardPasswordEncoder("53cr3t"));
+}
+```
+
+在 `configure()`  中调用了 AuthenticationManagerBuilder 的 `jdbcAuthentication()`方法，并且设置了一个 DataSource，这个 DataSource 是自动装配得到的。
+
+我们还可以用自定义的 sql 语句替换默认的的查询。
+
+如果存储在数据库的密码使用明文存储，就很容易受到黑客的攻击窃取。我们可以对密码进行转码处理，保护密码。
+
+为了解决这个问题，我们需要借助 `passwordEncoder()` 方法指定一个转码器（encoder），它可以接受 Spring Security 中 PasswordEncoder 接口的任意实现：
+
+- BCryptPasswordEncoder： 使用 bcrypt 强哈希加密。
+- NoOpPasswordEncoder： 不进行任何转码。
+- Pbkdf2PasswordEncoder：使用 PBKDF2 加密。
+- SCryptPasswordEncoder：使用 scrypt 哈希加密。
+- StandardPasswordEncoder：使用 SHA-256 哈希加密。
+
+你也可以自己实现 PasswordEncoder：
+
+```java
+public interface PasswordEncoder {
+    String encode(CharSequence rawPassword);
+    boolean matches(CharSequence rawPassword, String encodedPassword);
+}
+```
+
+数据库中的密码是永远不会解码的。用户在登录时输入的密码会按照相同的算法进行转码，然后和数据库中已经转码过的密码进行对比。这个对比是在 `matches()`方法中进行的。
+
+·
