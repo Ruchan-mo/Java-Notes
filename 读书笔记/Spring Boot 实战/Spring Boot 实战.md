@@ -134,7 +134,7 @@ public class Reader implements UserDetails {
 
 ##### 条件化配置
 
-Spring Boot 的自动配置自带了很多配置类，它们会在需要的时候开启或者关闭，这是因为它们使用了 Spring 4.0 的条件话配置。
+Spring Boot 的自动配置自带了很多配置类，它们会在需要的时候开启或者关闭，这是因为它们使用了 Spring 4.0 的条件化配置。
 
 ```java
 @Bean
