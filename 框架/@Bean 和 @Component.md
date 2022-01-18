@@ -6,7 +6,7 @@
 
 2. 两者的区别
 
-   **@Component** （包括 @Service、@Repository、@Controller）用于自动检测和使用类路径扫描自动配置 bean。注释类和 bean 之间存在隐式的一对一映射（即每个类一个 bean
+   **@Component** （包括 @Service、@Repository、@Controller）用于自动检测和使用类路径扫描自动配置 bean。注释类和 bean 之间存在隐式的一对一映射（即每个类一个 bean）
 
    ```java
    @Component
