@@ -1,4 +1,4 @@
-### 04-Spring 实战——保护Spring
+### 04-Spring 基础——保护Spring
 
 ##### 启动 Spring Security
 
