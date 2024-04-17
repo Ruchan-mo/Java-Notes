@@ -1,10 +1,10 @@
-Spring 框架的简单理解
+### Spring 框架的简单理解
 
-Spring 的容器是 Spring 框架中十分重要的概念。容器可以认为是一个管理着许多对象的集合，这些对象包括了 Java 类的实例。容器负责它们的创建、配置、销毁等。
+Spring 的容器是 Spring 框架中十分重要的概念。容器可以认为是一个管理着许多对象的集合，这些对象包括了 Java 类的实例。容器负责它们的**创建、配置、销毁**等。
 
-最常用的容器有 BeanFactory 和 ApplicationContext。BeanFactory 提供了基本的依赖注入功能，ApplicationContext 是它的扩展，提供了更多的企业级功能。
+最常用的容器有 `BeanFactory` 和 `ApplicationContext`。`BeanFactory` 提供了基本的依赖注入功能，`ApplicationContext` 是它的扩展，提供了更多的企业级功能。
 
-可以把 BeanFactory 想象成一个维护实例对象的列表的容器，这些对象被称为 “bean”。这些 bean 可以提供 Spring 框架的各种功能。可以在 bean 中配置 AOP，实现横切关注点的功能，比如日志记录，性能监控等。可以在 bean 中配置事务管理、国际化等。
+可以把 `BeanFactory` 想象成一个维护实例对象的列表的容器，这些对象被称为 “bean”。这些 bean 可以提供 Spring 框架的各种功能。可以在 bean 中配置 AOP，实现横切关注点的功能，比如日志记录，性能监控等。可以在 bean 中配置事务管理、国际化等。
 
 Spring 最重要的设计模式就是 “依赖注入”。简单来说，就是把以前自己在代码中 new 对象的过程：
 
@@ -36,6 +36,8 @@ public class Car {
 
 在第二种方式中，Car 类所需要的 Engine 对象，由构造函数的参数传递进来，而这个具体传递进来的 Engine 对象，是由 Spring 容器负责创建的。
 
+#### 注入 bean 的方式
+
 除了使用构造函数注入容器帮我们创建好的对象，我们还可以使用其他方式注入 bean：
 
 1. Setter 方法注入：通过在类中定义 setter 方法，并在 setter 方法上添加注解或配置文件来注入对象。Spring 会在对象创建后调用这些 setter 方法来设置依赖对象。
@@ -43,6 +45,7 @@ public class Car {
    ```java
    public class Car {
        private Engine engine;
+       @Autowired
        public void setEngine(Engine engine) {
            this.engine = engine;
        }
@@ -103,6 +106,8 @@ public class Car {
    }
    ```
 
+#### bean 对象的创建、定义
+
 那么这些 bean 对象都是从哪里来的呢？Spring 是如何创建这些 bean 对象的？
 
 依赖对象的创建取决于配置信息和注解的使用方式，常见的创建方式有：
@@ -113,7 +118,7 @@ public class Car {
    <bean id="engine" class="com.myboot.Engine"/>
    ```
 
-2. 在类上使用 `@Component`、`@Service`、`@Controller`、`@Repository` 注解，被注解的类将会被 Spring 创建为单例对象。
+2. 在类上使用 `@Component`、`@Service`、`@Controller`、`@Repository` 、`@Configuration` 注解，被注解的类将会被 Spring 创建为单例对象。
 
    ```java
    @Component
