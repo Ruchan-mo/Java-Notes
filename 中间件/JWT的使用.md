@@ -138,8 +138,6 @@ eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJKb2Ui.wtl52E258XyiMcPe4Rl7ya9pPpLg4f0w3-9SW1w2l5
 
 这些步骤全部由自己手动操作，实在是太麻烦了。稍有差错，就有可能导致严重的安全问题。JWT 就是用来这些操作的：自动化创建、解析、验证所有的 JWS。
 
-
-
 #### JWE 示例
 
 JWT 不受保护，JWS 被签名，但是两者其中的信息都是可见的，JWS 只是防止信息被人篡改，很多时候对于非敏感信息来说这是可以的。
@@ -158,7 +156,9 @@ KDlTtXchhZTGufMYmOYGS4HffxPSUrfmqCHXaI9wOGY.
 U0m_YmjN04DJvceFICbCVQ
 ```
 
-#### JJWT 的使用
+### JJWT 的使用
+
+---
 
 ##### 依赖
 
@@ -227,7 +227,9 @@ try {
 }
 ```
 
-#### 创建 JWT 
+### 创建 JWT 
+
+---
 
 步骤：
 
@@ -253,11 +255,11 @@ String jwt = Jwts.builder()						// (1)
     .compact();									// (5)
 ```
 
-##### JWT Header
+#### JWT Header
 
 JWT header 是一个 JSON 对象，提供了各种关于内容、格式、payload 相关的加密操作的元信息。
 
-###### JwtBuilder Header
+##### JwtBuilder Header
 
 设置一个或多个 JWT header 参数（键值对），最简单最推荐的方法就是使用 `JwtBuilder` 的 `header` ，然后再调用 `and()` 方法，回到 `JwtBuilder` 对象，进行后续操作。例如：
 
@@ -300,7 +302,7 @@ Jwts.builder()
    // ... etc ...
 ```
 
-###### Jwts HeaderBuilder
+##### Jwts HeaderBuilder
 
 如果要在 `JwtBuilder` 外创建一个 `Header` ，可以使用 `Jwts.header()` ，返回一个独立的 `Header` builder：
 
@@ -338,7 +340,9 @@ Strign jwt = Jwts.builder()
     .compact();
 ```
 
-##### JWT Payload
+#### JWT Payload
+
+##### 任意内容
 
 JWT 的负载可以是任何东西  - 任何可以用字节数组表示的东西，比如文本，图片，文档灯。既然 `header` 可以是一个 JSON，那负载自然也可以是 JSON，尤其是表示认证的 claims。
 
@@ -370,11 +374,11 @@ String jwt = Jwts.builder()
 
 推荐使用 双参数 的方法，它能保证 JWT 接收者从 header 中的 `cty` 得知如何正确转化负载中的 字节数组 为程序用到的格式。
 
-###### JWT Claims
+##### JWT Claims
 
 JJWT 支持类型安全的 claims 创建方式。
 
-**标准 claims：**
+###### 标准 claims
 
 提供了各种标准的方法：
 
@@ -399,7 +403,7 @@ String jws = Jwts.builder()
     /// ... etc ...
 ```
 
-**自定义 Claims：**
+###### 自定义 Claims
 
 想要自定义 claims 的内容，可以使用 `JwtBuilder` 的 `claim` 方法：
 
@@ -413,7 +417,7 @@ String jws = Jwts.builder()
 
 每次 `claim` 方法被调用，Jwt 只是简单地把新的 键值对 添加到内部的 `Claims` builder 中，可能会导致同名的键值对被覆盖。
 
-**Claims Map**
+###### Claims Map
 
 如果想一次性添加多个 claims，可以使用 `JwtBuilder` 的 `claims(Map)` 方法：
 
@@ -494,4 +498,161 @@ try {
       .build()
       .parseEncryptedClaims(jweString);
   ```
+
+#### 动态查找 Key
+
+在一些程序中，不同的 JWT 可能是被不同的 key 签名或者加密的。你可能会对某个用户使用专门的 key，或者对同一个顾客的不同 JWT 使用同一个 key，又或者你的程序自己使用一个加密的 key。
+
+在所有这些情况下，你是无法知道接收到的 JWT 是用哪个 key 签名或者加密的，所以你不能在代码中用 `verifyWith` 或者  `decryptWith`  方法硬编码你的 key，只能在你确定你的应用只有一个 key 的情况下才能这么做。
+
+##### Key Locator
+
+如果需要动态查找 key，那就要实现 `Locator<Key>` 接口，并且在 `JwtParserBuilder` 中，通过 `keyLocator` 方法指定一个实例：
+
+```java
+Locator<Key> keyLocator = getMyKeyLocator();	// 实现
+
+Jwts.parser()
+    .keyLocator(keyLocator)	// 指定
+    .build()
+    // ... etc ...
+```
+
+`Locator<Key>` 用来查找 JWS 签名认证的 key 以及 JWE 解密的 key，需要决定它该根据 JWT 的 `header` 信息，返回哪个 key：
+
+```java
+public class MyKeyLocator extends LocatorAdapter<Key> {
+    @Override
+    public Key locate(ProtectedHeader<?> header) {	// JwsHeader or JweHeader
+        // 实现具体的返回
+    }
+}
+```
+
+`JwtParser` 会在解析 `header` 之后调用 `locate` 方法，然后再去解析 `payload` ，或者验证 JWS
+
+ 签名，解密 JWE 密文。
+
+##### Key Locator 策略
+
+检查 `header` 的时候，根据什么来决定用哪个 key 呢？
+
+JWT 规范中，在 header 中设置了一个 `kid` （Key ID）参数，而后创建 JWT：
+
+```java
+Key key = getSigningKey();	// 或者 getEncryptionKey() 
+String keyId = getKeyId(key);	// 实现 key 的 id 生成方案
+String jws = Jwts.builder()
+    
+    .header().keyId(keyId).and()
+    
+    .signWith(key)
+    //.encryptWith(key, keyAlg, encryptionAlg)
+    .compact();
+```
+
+这样在解析的时候，`Locator<Key>` 的实现会检查 `header`  中的 `kid` 值，通过该 `kid` 查找需要用到的 key（数据库，内存，文件中）。
+
+```java
+public class MyKeyLocator extends LocatorAdapter<Key> {
+    
+    @Override
+    public Key locate(ProtectedHeader<?> header) { // JwsHeader, JweHeader 都继承 ProtectedHeader
+    	String keyId = header.getKeyId();
+        Key key = lookupKey(keyId);	// 具体实现
+        
+        return key;
+    }
+}
+```
+
+使用 `header.getKeyId()`  只是一种比较普遍的做法，你完全可以自定义参数，只要在创建 JWT 的时候设置好就行。
+
+如果出于某些原因，想要把 JWS 和 JWE 查找 Key 的实现分开也是可以的：
+
+```java
+public class MyKeyLocator extends LocatorAdapter<Key> {
+    
+    @Override
+    public Key locate(JwsHeader header) {
+        String keyId = header.getKeyId();	// 或者自己使用别的参数
+        return lookupSignatureVerificationKey(keyId);	// 实现
+    }
+    
+    @Override
+    public Key locate(JweHeader header) {
+        String keyId = header.getKeyId();
+        return lookupDecryptionKey(keyId);	// 实现
+    }
+}
+```
+
+##### Key Locator 返回值
+
+无论使用哪种实现，都要记得返回正确的 Key 类型：
+
+- JWS：
+  - 基于 HMAC 的签名算法，返回 `SecretKey`
+  - 非对称签名算法，返回 `PublicKey` 
+- JWE:
+  - 直接加密，返回 `SecretKey`
+  - 基于密码的派生算法，返回一个 `io.jsonwebtoken.security.Password` 对象，可以通过调用 `Keys.password(char[] passwordCharacters)` 创建一个 `Password` 实例
+  - 非对称加密算法，返回 `PrivateKey` 
+
+#### Claim 断言
+
+可以要求要解析的 JWT 必须符合特定的要求，比如要求 JWT 中必须要有一个特定的 `sub` 值，否则就不信任该 JWT，可以用到  `require*` 方法：
+
+```java
+try {
+    Jwts.parser().requireSubject("jsmith")/* etc... */.build().parse(s);
+} catch (InvalidClaimException ice) {
+    // 没有 sub claim，或者 sub 的值不是 'jsmith' 
+}
+```
+
+如果要明确是没有值还是值不对，可以使用不同的 `Exception`：
+
+```java
+try {
+    Jwts.parser().requireSubject("jsmith")/* etc... */.build().parse(s);
+} catch (MissingClaimException mce) {
+    // 没有 sub claim
+} catch (IncorrectClaimException ice) {
+    // claim 中 sub 的值不是 'jsmith'
+}
+```
+
+也可以要求自定义的 claim 必须是特定的值，用到 `require(claimName, requiredValue)` ：
+
+```java
+try {
+    Jwts.parser().require("myClaim", "myRequiredValue")/* etc... */.build().parse(s);
+} catch (InvalidClaimException ice) {
+    // 
+}
+```
+
+#### 时差
+
+解析 JWT 的时候，有两个涉及到时间的因素：`exp` 和 `nbf` 。如果创建 JWT 的机器 和 收到 JWT 的机器存在时间误差，那就可能导致因为时间差的解析失败。
+
+可以使用 `JwtParserBuilder`  的 `clockSkewSeconds`  方法来允许解析时候存在一定的时间误差：
+
+```java
+long seconds = 3 * 60;
+
+Jwts.parser()
+    .clockSkewSeconds(seconds)
+    
+    // ... etc ...
+    .build()
+    .parse(jwt);
+```
+
+
+
+
+
+
 
