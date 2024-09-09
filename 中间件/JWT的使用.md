@@ -13,7 +13,7 @@ JWT 负载可以是任何东西 —— 只要能用 byte 数组表示，例如�
 
 因为 JWT 的 `header` 是一个 JSON 对象，所以 `payload` 使用 JSON 对象也很合理。当使用 JSON 对象时，`payload` 也被叫做 `Claims`，并且每对 name/value 对就叫 `claim` 。
 
-用 claim 传输认证信息很方便，而且任何人都可以这么做。正因如此，必须保证 claims 的来源是信得过的。
+用 claim 传输认证信息很方便，而且任何人都可以这么做。正因如此，必须保证 claim 的来源是信得过的。
 
 JWTs 的一个很棒的特性就是可以通过多种途径保护起来。JWT 可以被签名（即 JWS）或者加密（即 JWE）。通过验证签名或者解密 JWT，JWT的来源就变得更可靠。
 
@@ -136,11 +136,11 @@ eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJKb2UifQ.BFAa5DaW1EPwi1Les_GxxwiqvRSpjFzEeadnSdLB
 eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJKb2Ui.wtl52E258XyiMcPe4Rl7ya9pPpLg4f0w3-9SW1w2l5g=
 ```
 
-这些步骤全部由自己手动操作，实在是太麻烦了。稍有差错，就有可能导致严重的安全问题。JWT 就是用来这些操作的：自动化创建、解析、验证所有的 JWS。
+这些步骤全部由自己手动操作，实在是太麻烦了。稍有差错，就有可能导致严重的安全问题。JWT 就是用来简化这些操作的：自动化创建、解析、验证所有的 JWS。
 
 #### JWE 示例
 
-JWT 不受保护，JWS 被签名，但是两者其中的信息都是可见的，JWS 只是防止信息被人篡改，很多时候对于非敏感信息来说这是可以的。
+JWT 不受保护，JWS 可以签名，但是两者其中的信息都是可见的，JWS 只是防止信息被人篡改，很多时候对于非敏感信息来说这是可以的。
 
 但是对于敏感信息，比如邮件地址，银行账户，这类敏感的信息呢？
 
@@ -186,7 +186,7 @@ U0m_YmjN04DJvceFICbCVQ
 
 ---
 
-JWT 已经处理好了细节，只需要简单的使用：
+JJWT 已经处理好了细节，只需要简单的使用：
 
 ```java
 import io.jsonwebtoken.Jwts;
@@ -199,7 +199,7 @@ SecretKey key = Jwts.SIG.HS256.key().build();
 String jws = Jwts.builder().subject("Joe").SighWith(key).compact();
 ```
 
-上述代码完成了：
+上述代码：
 
 1. 创建一个带有 sub键，值为 ”Joe“ 的claim 的 JWT
 2. 使用一个适用于 HS256 算法的 key，对 JWT 签名
